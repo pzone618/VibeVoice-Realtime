@@ -100,6 +100,214 @@ https://github.com/user-attachments/assets/a357c4b6-9768-495c-a576-1618f6275727
 For more examples, see the [Project Page](https://microsoft.github.io/VibeVoice).
 
 
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.9+ (Python 3.11 recommended for better OpenSSL support)
+- For GPU acceleration:
+  - NVIDIA GPU with CUDA support (recommended: T4 or better)
+  - Apple Silicon Mac with MPS support (M1/M2/M3/M4)
+- 8GB+ RAM (16GB+ recommended)
+
+### Installation
+
+#### Option 1: Standard Installation (Recommended)
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/microsoft/VibeVoice.git
+cd VibeVoice
+```
+
+2. **Create and activate virtual environment:**
+```bash
+# Using venv
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Or using conda
+conda create -n vibevoice python=3.11
+conda activate vibevoice
+```
+
+3. **Install dependencies:**
+```bash
+pip install -e .
+```
+
+#### Option 2: Using NVIDIA Docker (For CUDA users)
+
+```bash
+# Launch NVIDIA PyTorch Container (24.07 or later)
+docker run --privileged --net=host --ipc=host \
+  --ulimit memlock=-1:-1 --ulimit stack=-1:-1 \
+  --gpus all --rm -it nvcr.io/nvidia/pytorch:24.07-py3
+
+# Inside container
+git clone https://github.com/microsoft/VibeVoice.git
+cd VibeVoice
+pip install -e .
+```
+
+### Usage
+
+#### 1️⃣ Real-time WebSocket Demo (Recommended)
+
+Launch the web-based interactive demo:
+
+```bash
+# For CUDA GPU
+python3 demo/vibevoice_realtime_demo.py \
+  --model_path microsoft/VibeVoice-Realtime-0.5B \
+  --device cuda \
+  --port 8000
+
+# For Apple Silicon (MPS)
+python3 demo/vibevoice_realtime_demo.py \
+  --model_path microsoft/VibeVoice-Realtime-0.5B \
+  --device mps \
+  --port 8000
+
+# For CPU (slower)
+python3 demo/vibevoice_realtime_demo.py \
+  --model_path microsoft/VibeVoice-Realtime-0.5B \
+  --device cpu \
+  --port 8000
+```
+
+Then open your browser and navigate to: `http://localhost:8000/`
+
+**Available Options:**
+- `--host`: Host to bind (default: `0.0.0.0`)
+- `--port`: Port to bind (default: `8000`)
+- `--device`: Device for inference (`cuda`, `mps`, or `cpu`)
+- `--model_path`: Model path or HuggingFace model ID
+- `--reload`: Enable auto-reload for development
+
+**Using Custom Voice Presets:**
+```bash
+VOICE_PRESET=en-Emma_woman python3 demo/vibevoice_realtime_demo.py \
+  --model_path microsoft/VibeVoice-Realtime-0.5B \
+  --device mps
+```
+
+Available voices are located in `demo/voices/streaming_model/`.
+
+#### 2️⃣ Batch Inference from Text Files
+
+Generate audio from text files:
+
+```bash
+python3 demo/realtime_model_inference_from_file.py \
+  --model_path microsoft/VibeVoice-Realtime-0.5B \
+  --txt_path demo/text_examples/1p_vibevoice.txt \
+  --speaker_name Carter \
+  --output_dir ./outputs \
+  --device mps \
+  --cfg_scale 1.5
+```
+
+**Options:**
+- `--txt_path`: Path to input text file
+- `--speaker_name`: Voice preset name (e.g., `Carter`, `Emma`, `Davis`)
+- `--output_dir`: Directory for output audio files (default: `./outputs`)
+- `--cfg_scale`: Classifier-Free Guidance scale (default: `1.5`)
+
+#### 3️⃣ Jupyter Notebook
+
+For interactive experimentation:
+```bash
+jupyter notebook demo/vibevoice_realtime_colab.ipynb
+```
+
+Or run directly in [Google Colab](https://colab.research.google.com/github/microsoft/VibeVoice/blob/main/demo/vibevoice_realtime_colab.ipynb).
+
+### 🎛️ Advanced Configuration
+
+#### Custom Port with uvicorn
+
+For more control over the server:
+```bash
+MODEL_PATH=microsoft/VibeVoice-Realtime-0.5B \
+MODEL_DEVICE=mps \
+uvicorn demo.web.app:app --host 0.0.0.0 --port 8080 --reload
+```
+
+#### Model Variants
+
+| Model | Context Length | Generation Length | Language Support | Speakers | Link |
+|-------|----------------|-------------------|------------------|----------|------|
+| VibeVoice-Realtime-0.5B | 8K | ~10 min | English only | Single | [HF](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B) |
+| VibeVoice-Long-Form* | 64K+ | ~90 min | English + Chinese | Up to 4 | [Collection](https://huggingface.co/collections/microsoft/vibevoice-68a2ef24a875c44be47b034f) |
+
+*Long-form multi-speaker model demos coming soon.
+
+### 🐛 Troubleshooting
+
+#### LibreSSL/OpenSSL Warning on macOS
+
+If you see `NotOpenSSLWarning` with LibreSSL:
+
+**Quick Fix:**
+```bash
+pip install 'urllib3<2' requests certifi
+```
+
+**Recommended Fix** (using Homebrew Python with OpenSSL):
+```bash
+brew install python@3.11
+/opt/homebrew/bin/python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+#### Model Download Issues
+
+The first run will download the model from Hugging Face (~2-3GB). If download fails:
+1. Check internet connection
+2. Set HuggingFace token if needed:
+   ```bash
+   huggingface-cli login
+   ```
+3. Manually download and specify local path:
+   ```bash
+   huggingface-cli download microsoft/VibeVoice-Realtime-0.5B
+   python3 demo/vibevoice_realtime_demo.py --model_path /path/to/local/model
+   ```
+
+#### Performance Issues
+
+- **GPU not detected:** Verify CUDA/MPS availability:
+  ```bash
+  python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}, MPS: {torch.backends.mps.is_available()}')"
+  ```
+- **Out of memory:** Reduce batch size or use CPU mode
+- **Slow generation:** Ensure you're using GPU; CPU inference is significantly slower
+
+
+## 📁 Project Structure
+
+```
+VibeVoice-Realtime/
+├── demo/
+│   ├── vibevoice_realtime_demo.py      # Main web demo entry point
+│   ├── realtime_model_inference_from_file.py  # Batch inference script
+│   ├── vibevoice_realtime_colab.ipynb  # Jupyter notebook
+│   ├── voices/streaming_model/          # Voice preset files (.pt)
+│   ├── text_examples/                   # Sample input texts
+│   └── web/
+│       ├── app.py                       # FastAPI backend
+│       └── index.html                   # Web UI
+├── vibevoice/
+│   ├── modular/                         # Model architecture
+│   ├── processor/                       # Text/audio processing
+│   └── schedule/                        # Diffusion schedulers
+├── docs/                                # Documentation
+├── pyproject.toml                       # Project dependencies
+└── README.md
+```
+
 
 ## Risks and limitations
 
