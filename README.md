@@ -161,13 +161,13 @@ Launch the web-based interactive demo:
 python3 demo/vibevoice_realtime_demo.py \
   --model_path microsoft/VibeVoice-Realtime-0.5B \
   --device cuda \
-  --port 8000
+  --port 8001
 
 # For Apple Silicon (MPS)
 python3 demo/vibevoice_realtime_demo.py \
   --model_path microsoft/VibeVoice-Realtime-0.5B \
   --device mps \
-  --port 8000
+  --port 8001
 
 # For CPU (slower)
 python3 demo/vibevoice_realtime_demo.py \
