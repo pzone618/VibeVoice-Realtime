@@ -206,20 +206,34 @@ python3 demo/vibevoice_realtime_demo.py \
   --device cuda \
   --port 8001
 
-# For Apple Silicon (MPS)
+# For Apple Silicon (MPS) - Mac mini M4 Pro, M3, M2, M1
 python3 demo/vibevoice_realtime_demo.py \
   --model_path microsoft/VibeVoice-Realtime-0.5B \
   --device mps \
   --port 8001
 
-# For CPU (slower)
+# For Mac mini M4 Pro with 8GB (Base Config) - RECOMMENDED
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+python3 demo/vibevoice_realtime_demo.py \
+  --model_path microsoft/VibeVoice-Realtime-0.5B \
+  --device mps \
+  --port 8001
+
+# For CPU (slower - not recommended for real-time use)
 python3 demo/vibevoice_realtime_demo.py \
   --model_path microsoft/VibeVoice-Realtime-0.5B \
   --device cpu \
   --port 8000
 ```
 
-Then open your browser and navigate to: `http://localhost:8000/`
+Then open your browser and navigate to: `http://localhost:8001/` (or `http://localhost:8000/` for CPU)
+
+**Device Selection Guide:**
+- `--device mps`: Apple Silicon GPU (Mac M1/M2/M3/M4) - **RECOMMENDED for Mac**
+- `--device cuda`: NVIDIA GPU - **Fastest on GPU**
+- `--device cpu`: CPU-only - Slowest, not suitable for real-time
+- **For Mac mini M4 Pro 8GB base**: Use the MPS command with memory optimization flags (see above)
 
 **Available Options:**
 - `--host`: Host to bind (default: `127.0.0.1`)
@@ -234,6 +248,9 @@ VOICE_PRESET=en-Emma_woman python3 demo/vibevoice_realtime_demo.py \
   --model_path microsoft/VibeVoice-Realtime-0.5B \
   --device mps
 ```
+
+**Additional Mac Setup Information:**
+For detailed Mac configuration, performance benchmarks, and troubleshooting, see [Mac mini M4 Pro Setup Guide](docs/MACOS_M4_PRO_SETUP.md)
 
 Available voices are located in `demo/voices/streaming_model/`.
 
