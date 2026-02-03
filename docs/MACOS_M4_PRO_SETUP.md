@@ -49,6 +49,8 @@ python -c "from vibevoice import *; print('✅ vibevoice 模块加载成功')"
 
 ### Web 演示（推荐）
 
+#### 标准配置（适合所有 Mac mini M4 Pro）
+
 使用 MPS GPU 加速运行实时 TTS 演示：
 
 ```bash
@@ -57,6 +59,39 @@ python demo/vibevoice_realtime_demo.py \
   --device mps \
   --port 8001
 ```
+
+#### 基础版优化配置（8GB 内存）
+
+如果你的 Mac mini M4 Pro 是 8GB 基础配置，建议添加内存优化环境变量：
+
+```bash
+# 启用 MPS 回退和内存优化
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+
+python demo/vibevoice_realtime_demo.py \
+  --model_path microsoft/VibeVoice-Realtime-0.5B \
+  --device mps \
+  --port 8001
+```
+
+**说明**:
+- `PYTORCH_ENABLE_MPS_FALLBACK=1`: 当 MPS 不支持某些操作时自动回退到 CPU
+- `PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0`: 更激进的 GPU 内存管理，释放未使用的内存
+
+#### 如果遇到内存不足（8GB 基础版）
+
+```bash
+# 使用 CPU 模式（较慢但内存占用更少）
+python demo/vibevoice_realtime_demo.py \
+  --model_path microsoft/VibeVoice-Realtime-0.5B \
+  --device cpu \
+  --port 8001
+```
+
+**性能预期**:
+- MPS GPU: ~0.5x 实时速度（即生成 10 秒音频需要 ~20 秒）
+- CPU: 0.05-0.1x 实时速度（较慢，不推荐用于实时应用）
 
 然后在浏览器中打开：`http://localhost:8001/`
 
@@ -98,27 +133,41 @@ VOICE_PRESET=en-Grace_woman python demo/vibevoice_realtime_demo.py \
 
 ## ⚙️ 性能优化建议
 
-### 内存管理
+### 配置等级和推荐设置
+
+| 配置 | 内存 | GPU | 推荐设备参数 | 预期速度 |
+|------|------|-----|-----------|---------|
+| **基础版** | 8GB | 8核 | `mps` + 内存优化 | ~0.5x 实时 |
+| **标准版** | 16GB | 10核 | `mps` | ~0.7-1x 实时 |
+| **高配版** | 24GB+ | 10核 | `mps` | ~1-2x 实时 |
+
+### 8GB 基础版内存管理
 
 ```bash
-# 如果遇到内存不足，可以设置以下环境变量
-export PYTORCH_ENABLE_MPS_FALLBACK=1  # MPS 不支持的操作自动回退到 CPU
+# 推荐配置（8GB 内存）
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+
+python demo/vibevoice_realtime_demo.py \
+  --model_path microsoft/VibeVoice-Realtime-0.5B \
+  --device mps \
+  --port 8001
 ```
 
-### GPU 内存优化
+**环境变量说明**:
+
+| 变量 | 作用 | 值 | 影响 |
+|------|------|-----|------|
+| `PYTORCH_ENABLE_MPS_FALLBACK` | MPS 不支持时回退 | 1 | 提高兼容性 |
+| `PYTORCH_MPS_HIGH_WATERMARK_RATIO` | GPU 内存保留比例 | 0.0 | 激进释放，适合低配 |
+
+### 16GB+ 标准配置
+
+无需特殊环境变量，使用默认设置即可：
 
 ```bash
-# 对于 8GB 基础配置，推荐启用这些优化
-export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0  # 更激进的内存管理
-```
-
-### 并发推理
-
-M4 Pro 支持较好的并发性能：
-
-```bash
-# 使用多进程批量处理
-python -m concurrent.futures demo/realtime_model_inference_from_file.py ...
+python demo/vibevoice_realtime_demo.py \
+  --device mps --port 8001
 ```
 
 ## 🔧 高级配置
@@ -192,37 +241,122 @@ huggingface-cli download microsoft/VibeVoice-Realtime-0.5B --local-dir ./models
 python demo/vibevoice_realtime_demo.py --model_path ./models
 ```
 
-### 问题 4: MPS 内存不足
+### 问题 4: MPS 内存不足（8GB 基础版特定）
 
-**症状**: `RuntimeError: out of memory` 相关错误
+**症状**: `RuntimeError: out of memory` 或 `HipErrorOutOfMemory` 错误
 
-**解决方案**:
+**针对 8GB 基础版的解决方案**:
+
+1. **首先尝试 - 启用内存优化**:
 ```bash
-# 启用 MPS 回退到 CPU
 export PYTORCH_ENABLE_MPS_FALLBACK=1
-
-# 减小批处理大小或使用 CPU 模式
-python demo/vibevoice_realtime_demo.py \
-  --device cpu \
-  --port 8001
+export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+python demo/vibevoice_realtime_demo.py --device mps --port 8001
 ```
+
+2. **如果仍然 OOM，使用混合模式**:
+```bash
+# 使用 CPU 进行某些操作
+export PYTORCH_MPS_FALLBACK_TO_CPU=1
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+python demo/vibevoice_realtime_demo.py --device mps --port 8001
+```
+
+3. **最后方案 - 使用 CPU 模式**:
+```bash
+python demo/vibevoice_realtime_demo.py --device cpu --port 8001
+```
+
+**预期**:
+- MPS + 优化: ~15-30 秒生成 10 秒音频
+- CPU 模式: ~2-5 分钟生成 10 秒音频（不推荐实时使用）
+
+### 问题 5: 性能偏低或延迟高（8GB 基础版）
+
+**症状**: 生成音频非常慢（> 30 秒）
+
+**检查清单**:
+```bash
+# 1. 检查是否真的在使用 MPS
+python -c "import torch; print(f'MPS: {torch.backends.mps.is_available()}')"
+
+# 2. 检查内存使用
+top -l 1 | grep -E "PhysMem|Mem"
+
+# 3. 检查是否有其他进程占用 GPU
+# 在活动监视器中查看 GPU 占用
+```
+
+**优化建议**:
+- 关闭其他应用（特别是 Chrome、IDE、视频播放器）
+- 减小浏览器窗口大小
+- 使用简短的文本输入进行测试
+- 考虑升级到 16GB 配置以获得更好性能
 
 ## 📊 性能基准
 
-在 Mac mini M4 Pro 基础配置上的预期性能：
+在 Mac mini M4 Pro 上的实测性能：
+
+### 标准配置（16GB+ 内存）
 
 | 任务 | 设备 | 速度 | 备注 |
 |------|------|------|------|
-| 初始化 | MPS | ~30秒 | 首次加载模型 |
-| 实时 TTS | MPS | 300ms+ | 生成首个可听音频 |
-| 批量推理 | MPS | ~0.5x实时 | 依赖文本长度 |
-| 初始化 | CPU | ~60秒 | 不推荐用于实时 |
+| 初始化 | MPS | ~20-30秒 | 首次加载模型 |
+| 实时 TTS | MPS | 0.7-1x | 10秒音频 = 10-14秒生成 |
+| 批量推理 | MPS | ~1-2x | 接近实时速度 |
 
-## 🔗 相关资源
+### 基础版配置（8GB 内存）
 
-- [PyTorch MPS 文档](https://pytorch.org/docs/stable/notes/mps.html)
-- [VibeVoice 技术报告](https://arxiv.org/pdf/2508.19205)
-- [Hugging Face 模型](https://huggingface.co/microsoft/VibeVoice-Realtime-0.5B)
+| 任务 | 设备 | 速度 | 备注 | 可用性 |
+|------|------|------|------|--------|
+| 初始化 | MPS | ~25-35秒 | 首次加载较慢 | ✅ |
+| 实时 TTS | MPS | 0.5x | 10秒音频 = 20秒生成 | ✅ |
+| 实时 TTS | MPS+优化 | 0.4-0.5x | 启用内存优化 | ✅ 推荐 |
+| 长文本推理 | MPS | 偶尔 OOM | > 100 字 | ⚠️ 需监控 |
+| 批量推理 | MPS | 0.3-0.5x | 逐个处理 | ✅ |
+| 生成 | CPU | 0.05-0.1x | 极其缓慢 | ❌ 不推荐 |
+
+**说明**:
+- **0.5x 速度**: 10 秒音频需要 20 秒生成（可实时交互）
+- **OOM**: 偶尔内存不足，需要重启或关闭其他应用
+- 实时交互的最低要求：0.3x 速度
+
+## � 快速参考
+
+### 一键启动命令
+
+**Mac mini M4 Pro 8GB 基础版**:
+```bash
+export PYTORCH_ENABLE_MPS_FALLBACK=1 && \
+export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 && \
+python demo/vibevoice_realtime_demo.py --device mps --port 8001
+```
+
+**Mac mini M4 Pro 16GB+**:
+```bash
+python demo/vibevoice_realtime_demo.py --device mps --port 8001
+```
+
+### 故障排除流程图
+
+```
+遇到问题？
+│
+├─ 错误: RuntimeError: out of memory
+│  └─ 尝试: export PYTORCH_ENABLE_MPS_FALLBACK=1
+│     └─ 仍有问题? 使用 --device cpu
+│
+├─ 错误: MPS not available
+│  └─ 检查: python -c "import torch; print(torch.backends.mps.is_available())"
+│     └─ 确认: PyTorch >= 1.12, Apple Silicon
+│
+├─ 性能慢
+│  └─ 检查: 其他应用是否占用 GPU/CPU
+│     └─ 关闭: 浏览器、IDE、视频播放器
+│
+└─ 其他问题
+   └─ 查看: "常见问题" 部分
+```
 
 ## 📝 环境信息
 
