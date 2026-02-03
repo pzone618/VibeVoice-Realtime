@@ -110,9 +110,37 @@ For more examples, see the [Project Page](https://microsoft.github.io/VibeVoice)
   - Apple Silicon Mac with MPS support (M1/M2/M3/M4)
 - 8GB+ RAM (16GB+ recommended)
 
+**Note for Mac users:** See [Mac mini M4 Pro Setup Guide](docs/MACOS_M4_PRO_SETUP.md) for optimized configuration and best practices.
+
 ### Installation
 
-#### Option 1: Standard Installation (Recommended)
+#### Option 1: Standard Installation with uv (Recommended - Fast & Reliable)
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/microsoft/VibeVoice.git
+cd VibeVoice
+```
+
+2. **Install uv** (if not already installed):
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Or using Homebrew on macOS:
+brew install uv
+```
+
+3. **Create and activate virtual environment with uv:**
+```bash
+uv venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+4. **Install dependencies with uv:**
+```bash
+uv pip install -e .
+```
+
+#### Option 2: Standard Installation with pip/venv
 
 1. **Clone the repository:**
 ```bash
@@ -145,6 +173,21 @@ docker run --privileged --net=host --ipc=host \
   --gpus all --rm -it nvcr.io/nvidia/pytorch:24.07-py3
 
 # Inside container
+git clone https://github.com/microsoft/VibeVoice.git
+cd VibeVoice
+pip install -e .
+```
+
+#### Option 3: Using Podman (Container alternative)
+
+For users preferring Podman over Docker:
+```bash
+podman run --privileged --userns=keep-id \
+  --security-opt label=disable \
+  -it docker.io/nvidia/cuda:12.1.1-runtime-ubuntu22.04
+
+# Inside container
+apt-get update && apt-get install -y python3-pip git
 git clone https://github.com/microsoft/VibeVoice.git
 cd VibeVoice
 pip install -e .
@@ -286,6 +329,40 @@ The first run will download the model from Hugging Face (~2-3GB). If download fa
 - **Slow generation:** Ensure you're using GPU; CPU inference is significantly slower
 
 
+## 🧪 Development & Testing
+
+### Verify Installation
+
+After installation, verify everything works correctly:
+
+```bash
+# Test module imports
+python -c "from vibevoice import *; print('✅ vibevoice imported successfully')"
+
+# Test core components
+python -c "from vibevoice.modular.configuration_vibevoice import VibeVoiceConfig; print('✅ VibeVoiceConfig loaded')"
+python -c "from vibevoice.processor.vibevoice_processor import VibeVoiceProcessor; print('✅ VibeVoiceProcessor loaded')"
+
+# For Apple Silicon Macs, verify MPS support
+python -c "import torch; print(f'MPS Available: {torch.backends.mps.is_available()}')"
+```
+
+### Running Tests
+
+Check syntax and basic functionality:
+
+```bash
+# Syntax validation
+python -m py_compile vibevoice/**/*.py demo/*.py
+
+# Test demo script
+python demo/vibevoice_realtime_demo.py --help
+```
+
+### Platform-Specific Guides
+
+- **Mac mini M4 Pro / Apple Silicon**: See [Mac Setup Guide](docs/MACOS_M4_PRO_SETUP.md)
+
 ## 📁 Project Structure
 
 ```
@@ -301,13 +378,37 @@ VibeVoice-Realtime/
 │       └── index.html                   # Web UI
 ├── vibevoice/
 │   ├── modular/                         # Model architecture
+│   │   ├── configuration_vibevoice.py
+│   │   ├── configuration_vibevoice_streaming.py
+│   │   ├── modeling_vibevoice_streaming.py
+│   │   └── ...
 │   ├── processor/                       # Text/audio processing
+│   │   ├── vibevoice_processor.py
+│   │   ├── vibevoice_streaming_processor.py
+│   │   └── ...
 │   └── schedule/                        # Diffusion schedulers
+│       ├── dpm_solver.py
+│       └── timestep_sampler.py
 ├── docs/                                # Documentation
-├── pyproject.toml                       # Project dependencies
+│   └── vibevoice-realtime-0.5b.md
+├── pyproject.toml                       # Project metadata & dependencies
+├── .gitignore                           # Git ignore rules
 └── README.md
 ```
 
+
+## 🤝 Contributing
+
+Contributions are welcome! Please ensure:
+
+1. Your code follows the existing style and structure
+2. All imports work correctly: `python -c "from vibevoice import *"`
+3. Python syntax is valid: `python -m py_compile your_file.py`
+4. Update this README if adding new features or scripts
+
+## 📄 License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Risks and limitations
 

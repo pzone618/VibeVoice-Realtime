@@ -1,4 +1,6 @@
+# ============================================================================
 # Python
+# ============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,63 +18,121 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
+# ============================================================================
 # Virtual Environments
+# ============================================================================
 venv/
 .venv/
+.venv*/
 env/
 .env/
 ENV/
 env.bak/
 venv.bak/
-.venv11/
 
-# PyCharm
+# ============================================================================
+# IDE & Editors
+# ============================================================================
 .idea/
-
-# VS Code
 .vscode/
 *.code-workspace
+*.sublime-project
+*.sublime-workspace
+.vim/
+.emacs.d/
+.netrwhist
+*~
 
+# ============================================================================
 # Jupyter Notebook
+# ============================================================================
 .ipynb_checkpoints
 *.ipynb_checkpoints/
+.jupyter/
+*_checkpoint.ipynb
 
-# Model Files and Caches
+# ============================================================================
+# Model Files and Caches (HuggingFace, PyTorch)
+# ============================================================================
+# Downloaded model files (keep voice presets but ignore large downloaded models)
 *.pt
 *.pth
 *.ckpt
 *.safetensors
-model_cache/
-.cache/
-huggingface_hub/
+*.bin
+*.pkl
+*.pickle
+*.weights
+*.pth.tar
 
-# Output Files
+# Model cache directories
+models/
+model_cache/
+huggingface_hub/
+.huggingface/
+cache/
+.cache/
+
+# ============================================================================
+# Data and Outputs
+# ============================================================================
 outputs/
+generated_audio/
+results/
+checkpoints/
 *.wav
 *.mp3
 *.flac
 *.ogg
-generated_audio/
+*.m4a
+*.aac
 
-# Logs
+# ============================================================================
+# Logs and Monitoring
+# ============================================================================
 *.log
-logs/
 *.out
+logs/
+wandb/
+tensorboard/
+runs/
+mlruns/
+lightning_logs/
 
-# macOS
+# ============================================================================
+# Development & Temporary Files
+# ============================================================================
+*.swp
+*.swo
+*.tmp
+*.bak
+.tmp/
+temp/
+tmp/
 .DS_Store
-.AppleDouble
-.LSOverride
+.DS_Store?
 ._*
 
+# ============================================================================
+# OS-specific Files
+# ============================================================================
+# macOS
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+
 # Linux
+*.bak
 *~
+.directory
 
 # Windows
 Thumbs.db
@@ -80,47 +140,113 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# Environment Variables
-.env
-.env.local
-.env.*.local
+# ============================================================================
+# Docker & Container
+# ============================================================================
+.dockerignore
+docker-compose.override.yml
+.docker/
 
+# ============================================================================
 # Testing
+# ============================================================================
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 .tox/
 .nox/
+.coverage.xml
+coverage.xml
+*.cover
+test-results/
 
+# ============================================================================
+# Environment Variables
+# ============================================================================
+.env
+.env.local
+.env.*.local
+.env.prod
+secrets/
+
+# ============================================================================
 # Distribution / Packaging
-*.whl
+# ============================================================================
+.whl
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Temporary Files
-*.tmp
-*.bak
-*.swp
-*.swo
-*~
-
-# Downloaded Models (keep voice presets but ignore large model files)
-# Keep demo/voices/streaming_model/*.pt (these are needed)
-# But ignore downloaded HuggingFace models
-!demo/voices/streaming_model/*.pt
-
-# IDE
-*.sublime-project
-*.sublime-workspace
-
-# Docker
-.dockerignore
-
+# ============================================================================
 # Database
+# ============================================================================
 *.db
 *.sqlite
 *.sqlite3
 
-# OS generated files
-.Spotlight-V100
-.Trashes
+# ============================================================================
+# uv (Python package manager)
+# ============================================================================
+.uv/
+uv.lock
+
+# ============================================================================
+# Node.js (if used for web frontend)
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ============================================================================
+# Build & Compilation
+# ============================================================================
+*.o
+*.a
+*.lib
+*.dylib
+*.dll
+*.exe
+*.out
+*.class
+*.jar
+
+# ============================================================================
+# IDE specific temporary files
+# ============================================================================
+.pylint.d/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+
+# ============================================================================
+# Audio/Media Processing Temporary Files
+# ============================================================================
+*.tmp.*
+temp_audio/
+temp_files/
+
+# ============================================================================
+# Documentation Build Files
+# ============================================================================
+docs/_build/
+docs/.doctrees/
+site/
+
+# ============================================================================
+# VS Code specific
+# ============================================================================
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+.vscode/*.code-snippets
+
+# ============================================================================
+# Keep Important Files
+# ============================================================================
+# Ensure voice presets in demo are NOT ignored
+!demo/voices/
+!demo/voices/streaming_model/
+!demo/voices/streaming_model/*.pt
